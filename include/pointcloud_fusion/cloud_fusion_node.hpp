@@ -17,25 +17,26 @@ public:
 private:
     void initializeParameters();
     void syncCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud1_msg,
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud2_msg);
+            const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud2_msg);
+    void setTransformMatrix(Eigen::Matrix4f& transform, float roll, float pitch, float yaw, float tx, float ty, float tz);
 
     message_filters::Subscriber<sensor_msgs::msg::PointCloud2> cloud1_sub_;
     message_filters::Subscriber<sensor_msgs::msg::PointCloud2> cloud2_sub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr fused_cloud_pub_;
 
 
-    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
-    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
-
-    std::string lidar_frame_{"livox_frame_bottom"};
-    std::string rear_lidar_frame_{"livox_frame_top"};
-
     std::string lidar_topic_{"/BottomLidar/livox/lidar/pointcloud"};
     std::string rear_lidar_topic_{"/TopLidar/livox/lidar/pointcloud"};
 
     std::string target_frame_{"base_link"};
 
+    // 变换参数（欧拉角 + 平移
+    // 注意两个topic对应的变换矩阵的不同
+    float roll1_ = 0.0f, pitch1_ = 0.0f, yaw1_ = 0.0f; // cloud1 的欧拉角（弧度）
+    float tx1_ = 0.0f, ty1_ = 0.0f, tz1_ = 0.0f;       // cloud1 的平移（米）
+
+    float roll2_ = 0.0f, pitch2_ = 0.0f, yaw2_ = 0.0f; // cloud2 的欧拉角（弧度）
+    float tx2_ = 0.0f, ty2_ = 0.0f, tz2_ = 0.0f;       // cloud2 的平移（米）
 
 
 

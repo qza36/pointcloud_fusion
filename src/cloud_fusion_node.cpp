@@ -11,16 +11,11 @@ CloudFusion::CloudFusion(const rclcpp::NodeOptions& options):Node("CloudFusion",
 
     this->initializeParameters();
 
-    tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-    tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_);
-
     fused_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/points/fused", 10);
 
     // 订阅两个 Livox 点云话题
     cloud1_sub_.subscribe(this, lidar_topic_);
     cloud2_sub_.subscribe(this, rear_lidar_topic_);
-
-
 
     // 使用 ApproximateTime 同步器
     sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
@@ -35,13 +30,11 @@ void CloudFusion::initializeParameters()
     RCLCPP_INFO(this->get_logger(), "Initializing parameters");
     target_frame_ = this->declare_parameter<std::string>("target_frame", target_frame_);
 
-    rear_lidar_frame_ = declare_parameter<std::string>("rear_lidar_frame", rear_lidar_frame_);
-    lidar_frame_ = declare_parameter<std::string>("lidar_frame",lidar_frame_);
-
     lidar_topic_ = declare_parameter<std::string>("idar_topic",lidar_topic_);
     rear_lidar_topic_ = declare_parameter<std::string>("rear_lidar_topic",rear_lidar_topic_);
 }
-void CloudFusion::syncCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud1_msg,
+void CloudFusion::syncCallback(
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud1_msg,
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud2_msg)
 {
     RCLCPP_INFO(this->get_logger(),"start callback");
@@ -51,35 +44,58 @@ void CloudFusion::syncCallback(const sensor_msgs::msg::PointCloud2::ConstSharedP
     pcl::fromROSMsg(*cloud1_msg, *cloud1);
     pcl::fromROSMsg(*cloud2_msg, *cloud2);
 
+
+    // 定义变换矩阵
+    Eigen::Matrix4f transform1 = Eigen::Matrix4f::Identity(); // cloud1 的变换矩阵
+    Eigen::Matrix4f transform2 = Eigen::Matrix4f::Identity(); // cloud2 的变换矩阵
+
+
+    // 设置 cloud1 的变换矩阵（欧拉角 + 平移）
+    setTransformMatrix(transform1, roll1_, pitch1_, yaw1_, tx1_, ty1_, tz1_);
+
+    // 设置 cloud2 的变换矩阵（欧拉角 + 平移）
+    setTransformMatrix(transform2, roll2_, pitch2_, yaw2_, tx2_, ty2_, tz2_);
+
+
+    // 对点云进行坐标变换
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud1_transformed(new pcl::PointCloud<pcl::PointXYZI>);
-    try {
-        pcl_ros::transformPointCloud(target_frame_, *cloud1, *cloud1_transformed, *tf2_buffer_);
-    } catch (const tf2::TransformException & ex) {
-        RCLCPP_WARN(this->get_logger(), "Cloud1 transform error: %s", ex.what());
-        return;
-    }
-
-    // 转换第二个点云
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud2_transformed(new pcl::PointCloud<pcl::PointXYZI>);
-    try {
-        pcl_ros::transformPointCloud(target_frame_, *cloud2, *cloud2_transformed, *tf2_buffer_);
-    } catch (const tf2::TransformException & ex) {
-        RCLCPP_WARN(this->get_logger(), "Cloud2 transform error: %s", ex.what());
-        return;
-    }
-    // === 拼接点云 ===
-    *cloud1_transformed += *cloud2_transformed;
+    pcl::transformPointCloud(*cloud1, *cloud1_transformed, transform1);
+    pcl::transformPointCloud(*cloud2, *cloud2_transformed, transform2);
+
+    pcl::PointCloud<pcl::PointXYZI>::Ptr merged_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    *merged_cloud = *cloud1_transformed + *cloud2_transformed;
 
 
-    sensor_msgs::msg::PointCloud2 fused_cloud_msg;
-    pcl::toROSMsg(*cloud1_transformed, fused_cloud_msg);
+    sensor_msgs::msg::PointCloud2 merged_msg;
+    pcl::toROSMsg(*merged_cloud, merged_msg);
+    merged_msg.header.frame_id = target_frame_; // 设置坐标系
+    merged_msg.header.stamp = this->now();
 
-    // 设置消息头
-    fused_cloud_msg.header.stamp = cloud1_msg->header.stamp; // 使用其中一个的时间戳
-    fused_cloud_msg.header.frame_id = target_frame_;
 
-    fused_cloud_pub_->publish(fused_cloud_msg);
+    fused_cloud_pub_->publish(merged_msg);
 }
+void CloudFusion::setTransformMatrix(Eigen::Matrix4f& transform, float roll,
+    float pitch, float yaw,float tx, float ty, float tz)
+{
+    // 计算旋转矩阵
+    Eigen::AngleAxisf rollAngle(roll, Eigen::Vector3f::UnitX());
+    Eigen::AngleAxisf pitchAngle(pitch, Eigen::Vector3f::UnitY());
+    Eigen::AngleAxisf yawAngle(yaw, Eigen::Vector3f::UnitZ());
+
+    Eigen::Quaternion<float> q = yawAngle * pitchAngle * rollAngle;
+    Eigen::Matrix3f rotationMatrix = q.matrix();
+
+    // 设置变换矩阵的旋转部分
+    transform.block<3, 3>(0, 0) = rotationMatrix;
+
+    // 设置变换矩阵的平移部分
+    transform(0, 3) = tx;
+    transform(1, 3) = ty;
+    transform(2, 3) = tz;
+
+}
+
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
