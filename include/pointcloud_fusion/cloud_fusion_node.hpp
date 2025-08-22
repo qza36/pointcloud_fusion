@@ -25,18 +25,18 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr fused_cloud_pub_;
 
 
-    std::string lidar_topic_{"/BottomLidar/livox/lidar/pointcloud"};
-    std::string rear_lidar_topic_{"/TopLidar/livox/lidar/pointcloud"};
+    std::string lidar_topic_{"livox/lidar_192_168_1_121"};
+    std::string rear_lidar_topic_{"livox/lidar_192_168_1_178"};
 
     std::string target_frame_{"base_link"};
 
     // 变换参数（欧拉角 + 平移
     // 注意两个topic对应的变换矩阵的不同
     float roll1_ = 0.0f, pitch1_ = 0.0f, yaw1_ = 0.0f; // cloud1 的欧拉角（弧度）
-    float tx1_ = 0.0f, ty1_ = 0.0f, tz1_ = 0.0f;       // cloud1 的平移（米）
+    float tx1_ = 0.08f, ty1_ = 0.0f, tz1_ = 0.0f;       // cloud1 的平移（米）
 
     float roll2_ = 0.0f, pitch2_ = 0.0f, yaw2_ = 0.0f; // cloud2 的欧拉角（弧度）
-    float tx2_ = 0.0f, ty2_ = 0.0f, tz2_ = 0.0f;       // cloud2 的平移（米）
+    float tx2_ = 0.0f, ty2_ = 0.0f, tz2_ = 1.05f;       // cloud2 的平移（米）
 
 
 

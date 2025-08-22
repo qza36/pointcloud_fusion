@@ -30,8 +30,27 @@ void CloudFusion::initializeParameters()
     RCLCPP_INFO(this->get_logger(), "Initializing parameters");
     target_frame_ = this->declare_parameter<std::string>("target_frame", target_frame_);
 
-    lidar_topic_ = declare_parameter<std::string>("idar_topic",lidar_topic_);
+    lidar_topic_ = declare_parameter<std::string>("lidar_topic",lidar_topic_);
     rear_lidar_topic_ = declare_parameter<std::string>("rear_lidar_topic",rear_lidar_topic_);
+
+    tx1_ = this->declare_parameter<double>("cloud1.transform.tx", 0.08f);
+    ty1_ = this->declare_parameter<double>("cloud1.transform.ty", 0.0);
+    tz1_ = this->declare_parameter<double>("cloud1.transform.tz", 0.0);
+    roll1_ = this->declare_parameter<double>("cloud1.transform.roll", 0.0);
+    pitch1_ = this->declare_parameter<double>("cloud1.transform.pitch", 0.0);
+    yaw1_ = this->declare_parameter<double>("cloud1.transform.yaw", 0.0);
+
+    tx2_ = this->declare_parameter<double>("cloud2.transform.tx", 0.0);
+    ty2_ = this->declare_parameter<double>("cloud2.transform.ty", 0.0);
+    tz2_ = this->declare_parameter<double>("cloud2.transform.tz", 1.05f);
+    roll2_ = this->declare_parameter<double>("cloud2.transform.roll", 0.0);
+    pitch2_ = this->declare_parameter<double>("cloud2.transform.pitch", 0.0);
+    yaw2_ = this->declare_parameter<double>("cloud2.transform.yaw", 0.0);
+
+        RCLCPP_INFO(this->get_logger(), "Loaded transform for cloud1: [tx: %f, ty: %f, tz: %f, roll: %f, pitch: %f, yaw: %f]",
+        tx1_, ty1_, tz1_, roll1_, pitch1_, yaw1_);
+    RCLCPP_INFO(this->get_logger(), "Loaded transform for cloud2: [tx: %f, ty: %f, tz: %f, roll: %f, pitch: %f, yaw: %f]",
+        tx2_, ty2_, tz2_, roll2_, pitch2_, yaw2_);
 }
 void CloudFusion::syncCallback(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloud1_msg,
@@ -70,7 +89,7 @@ void CloudFusion::syncCallback(
     sensor_msgs::msg::PointCloud2 merged_msg;
     pcl::toROSMsg(*merged_cloud, merged_msg);
     merged_msg.header.frame_id = target_frame_; // 设置坐标系
-    merged_msg.header.stamp = this->now();
+    merged_msg.header.stamp = cloud1_msg->header.stamp;
 
 
     fused_cloud_pub_->publish(merged_msg);
