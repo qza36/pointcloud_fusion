@@ -1,0 +1,24 @@
+cloud_fusion_node:
+  ros__parameters:
+    # 基础配置
+    target_frame: "base_link"
+    lidar_topic: "livox/lidar_192_168_1_121"
+    rear_lidar_topic: "livox/lidar_192_168_1_178"
+
+    cloud1:
+      transform:        # 相对于target_frame
+        tx: 0.08         # 单位：米
+        ty: 0.0
+        tz: 0.2
+        roll: 0.0       # 单位：弧度
+        pitch: 0.0
+        yaw: 0.0
+
+    cloud2:
+      transform:
+        tx: 0.0
+        ty: 0.0
+        tz: 1.05
+        roll: 0.0
+        pitch: 0.0
+        yaw: 0.0
