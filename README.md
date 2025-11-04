@@ -21,9 +21,9 @@
 ### Requirements
 
 #### System Requirements
-- ROS 2 (tested with ROS 2 distributions)
-- Ubuntu 20.04 or later (or compatible Linux distribution)
-- CMake 3.8 or later
+- ROS 2 (tested with ROS 2 humble)
+- Ubuntu 22.04 or later (or compatible Linux distribution)
+- CMake 3.22 or later
 
 #### Dependencies
 - `rclcpp` - ROS 2 C++ client library
@@ -190,7 +190,7 @@ TODO: License declaration
 
 ### Maintainer
 
-- **Maintainer**: uagentscr000
+- **Maintainer**: ZhiangQi
 - **Email**: an9qi@yandex.com
 
 ### Contributing
@@ -216,9 +216,9 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 ### 系统要求
 
 #### 系统环境
-- ROS 2（已在 ROS 2 发行版上测试）
-- Ubuntu 20.04 或更高版本（或兼容的 Linux 发行版）
-- CMake 3.8 或更高版本
+- ROS 2（已在 ROS 2 humble上测试）
+- Ubuntu 22.04 或更高版本（或兼容的 Linux 发行版）
+- CMake 3.22 或更高版本
 
 #### 依赖项
 - `rclcpp` - ROS 2 C++ 客户端库
@@ -385,7 +385,7 @@ colcon test --packages-select pointcloud_fusion
 
 ### 维护者
 
-- **维护者**: uagentscr000
+- **维护者**: ZhiangQI
 - **邮箱**: an9qi@yandex.com
 
 ### 贡献
